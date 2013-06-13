@@ -125,6 +125,9 @@
              [groupname]]
               :results))
 
+(defn- repo-dir [group-id artifact-id]
+  (io/file (config :repo) group-id artifact-id))
+
 (defn recent-versions
   ([groupname jarname]
      (select jars
@@ -142,12 +145,11 @@
              (order :created :desc)
              (limit num))))
 
-(defn count-versions [groupname jarname]
-  (-> (exec-raw [(str "select count(distinct version) count from jars"
-                      " where group_name = ? and jar_name = ?")
-                 [groupname jarname]] :results)
-      first
-      :count))
+(defn count-versions [group-id artifact-id]
+  (->> (repo-dir group-id artifact-id)
+       (.listFiles)
+       (filter (memfn isDirectory))
+       count))
 
 (defn recent-jars []
   (exec-raw (str
