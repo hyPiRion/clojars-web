@@ -164,11 +164,6 @@
              "limit 5")
             :results))
 
-(defn jar-exists [groupname jarname]
-  (-> (exec-raw
-        [(str "select exists(select 1 from jars where group_name = ? and jar_name = ?)")
-          [groupname jarname]] :results)
-  first vals first (= 1)))
 
 (defn find-jar
   ([groupname jarname]

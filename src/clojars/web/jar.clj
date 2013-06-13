@@ -8,7 +8,7 @@
             [clojars.web.safe-hiccup :refer [form-to]]
             [clojars.maven :refer [jar-to-pom-map commit-url]]
             [clojars.auth :refer [authorized?]]
-            [clojars.db :refer [find-jar jar-exists]]
+            [clojars.db :refer [find-jar]]
             [clojars.promote :refer [blockers]]
             [clojars.stats :as stats]
             [clojure.set :as set]
@@ -23,9 +23,10 @@
         ((juxt :group_name :jar_name :version) jar)))))
 
 (defn dependency-link [dep]
-  (link-to
-    (if (jar-exists (:group_name dep) (:jar_name dep)) (jar-url dep) (maven-jar-url dep))
-    (str (jar-name dep) " " (:version dep))))
+  (let [url (if (find-jar (:group_name dep) (:jar_name dep))
+              (jar-url dep)
+              (maven-jar-url dep))]
+    (link-to url (str (jar-name dep) " " (:version dep)))))
 
 (defn dependency-section [title id dependencies]
   (if (empty? dependencies) '()
