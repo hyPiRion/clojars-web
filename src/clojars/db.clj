@@ -125,33 +125,13 @@
              [groupname]]
               :results))
 
-(defn- repo-dir [group-id artifact-id]
-  (io/file (config :repo) group-id artifact-id))
-
-(defn recent-versions
-  ([groupname jarname]
-     (select jars
-             (modifier "distinct")
-             (fields :version)
-             (where {:group_name groupname
-                     :jar_name jarname})
-             (order :created :desc)))
-  ([groupname jarname num]
-     (select jars
-             (modifier "distinct")
-             (fields :version)
-             (where {:group_name groupname
-                     :jar_name jarname})
-             (order :created :desc)
-             (limit num))))
-
-(defn count-versions [group-id artifact-id]
-  (->> (repo-dir group-id artifact-id)
+(defn recent-versions [group-id artifact-id]
+  (->> (io/file (config :repo) group-id artifact-id)
        (.listFiles)
        (filter (memfn isDirectory))
-       count))
+       (map str)))
 
-(defn recent-jars []
+(defn recent-jars [] ; index
   (exec-raw (str
              "select j.* "
              "from jars j "
@@ -166,8 +146,9 @@
              "limit 5")
             :results))
 
-
-(defn find-jar
+;; rename to find-latest-jar? should the special snapshot handling be
+;; in another defn?
+(defn find-jar ; index
   ([groupname jarname]
      (or (first (select jars
                         (where (and {:group_name groupname
@@ -189,7 +170,7 @@
                     (order :created :desc)
                     (limit 1)))))
 
-(defn all-projects [offset-num limit-num]
+(defn all-projects [offset-num limit-num] ; index
   (select jars
     (modifier "distinct")
     (fields :group_name :jar_name)
@@ -198,14 +179,14 @@
     (limit limit-num)
     (offset offset-num)))
 
-(defn count-all-projects []
+(defn count-all-projects [] ; index
   (-> (exec-raw
         "select count(*) count from (select distinct group_name, jar_name from jars order by group_name, jar_name)"
         :results)
       first
       :count))
 
-(defn count-projects-before [s]
+(defn count-projects-before [s] ; index
   (-> (exec-raw
        [(str "select count(*) count from"
               " (select distinct group_name, jar_name from jars"
@@ -215,7 +196,7 @@
       first
       :count))
 
-(defn browse-projects [current-page per-page]
+(defn browse-projects [current-page per-page] ; index
   (vec
     (map
       #(find-jar (:group_name %) (:jar_name %))

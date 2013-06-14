@@ -8,28 +8,26 @@
             [ring.util.response :as response]
             [clojure.set :as set]))
 
+(defn- show-artifact [artifact group-id artifact-id]
+  (auth/try-account
+   (let [versions (db/recent-versions group-id artifact-id)
+         recent-jars (map (partial db/find-jar group-id artifact-id) versions)]
+     (view/show-jar account artifact (take 5 recent-jars) (count versions)))))
+
 (defn show [group-id artifact-id]
   (if-let [artifact (db/find-jar group-id artifact-id)]
-    (auth/try-account
-     (view/show-jar account
-                    artifact
-                    (db/recent-versions group-id artifact-id 5)
-                    (db/count-versions group-id artifact-id)))))
+    (show-artifact artifact group-id artifact-id)))
 
 (defn list-versions [group-id artifact-id]
   (if-let [artifact (db/find-jar group-id artifact-id)]
     (auth/try-account
-     (view/show-versions account
-                         artifact
-                         (db/recent-versions group-id artifact-id)))))
+     (let [versions (db/recent-versions group-id artifact-id)
+           jars (map (partial db/find-jar group-id artifact-id) versions)]
+       (view/show-versions account artifact jars)))))
 
 (defn show-version [group-id artifact-id version]
   (if-let [artifact (db/find-jar group-id artifact-id version)]
-    (auth/try-account
-     (view/show-jar account
-                    artifact
-                    (db/recent-versions group-id artifact-id 5)
-                    (db/count-versions group-id artifact-id)))))
+    (show-artifact artifact group-id artifact-id)))
 
 (defroutes routes
   (GET ["/:artifact-id", :artifact-id #"[^/]+"] [artifact-id]

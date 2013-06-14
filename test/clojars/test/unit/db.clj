@@ -135,10 +135,9 @@
       (is (db/add-jar "test-user" (assoc jarmap :version "3"))))
     (with-redefs [db/get-time (fn [] (java.sql.Timestamp. 3))]
       (is (db/add-jar "test-user" (assoc jarmap :version "4-SNAPSHOT"))))
-    (is (= 4 (db/count-versions name name)))
-    (is (= ["4-SNAPSHOT" "3" "2" "1"]
-           (map :version (db/recent-versions name name))))
-    (is (= ["4-SNAPSHOT"] (map :version (db/recent-versions name name 1))))
+    (is (= 4 (count (db/recent-versions name name))))
+    (is (= ["4-SNAPSHOT" "3" "2" "1"] (db/recent-versions name name)))
+    (is (= ["4-SNAPSHOT"] (db/recent-versions name name 1)))
     (is (= "3" (:version (db/find-jar name name))))
     (is (= "4-SNAPSHOT" (:version (db/find-jar name name "4-SNAPSHOT"))))))
 
